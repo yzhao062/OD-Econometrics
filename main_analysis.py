@@ -3,6 +3,11 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 
+from pyod.models.hbos import HBOS
+from pyod.models.iforest import IForest
+from pyod.models.loda import LODA
+
+
 from statsmodels.discrete.discrete_model import Probit, Logit, \
     GeneralizedPoisson, Poisson
 import matplotlib.pyplot as plt
@@ -40,36 +45,58 @@ http://fmwww.bc.edu/ec-p/data/wooldridge2k/GROGGER.DES
 """
 
 dta_lists = [
-    # "attend.dta",  
+    "attend.dta",  
     # "smoke.dta",
-    "bwght.dta",
+    # "bwght.dta",
     # "grogger.dta",
 ]
+
+# OD_Flag = False
+OD_Flag = True
 
 for i in range(len(dta_lists)):
     df = pd.read_stata(os.path.join("data", dta_lists[i]))
     print(df.columns)
 
+
     # attend    
-    # Y = df['atndrte']
-    # X = df[['priGPA', 'ACT', 'frosh', 'soph']] 
-
-    # smoke
-    df['smokes'] = (df['cigs'] >= 1).astype(int)
-    Y = df['smokes']
-    X = df[['motheduc', 'lfaminc', 'white']]
-    X = X.fillna(X.mean())
-
-    # bwght
-    # Y = df['cigs']
-    # X = df[['educ', 'cigpric', 'white', 'age', 'income', 'restaurn',
-    #     'lincome', 'agesq', 'lcigpric']] 
-
-    # grogger
-    # df['arr86'] = (df['narr86']>=1).astype(int)
-    # Y = df['arr86']
-    # X = df[['pcnv', 'avgsen', 'tottime', 'ptime86', 'inc86', 'black', 'hispan', 'born60']]
-    # X = sm.add_constant(X)
+    if dta_lists[i] == "attend.dta":
+        Y = df['atndrte']
+        X = df[['priGPA', 'ACT', 'frosh', 'soph']]
+    
+    elif dta_lists[i] == "smoke.dta":
+        # smoke
+        Y = df['cigs']
+        X = df[['educ', 'cigpric', 'white', 'age', 'income', 'restaurn',
+            'lincome', 'agesq', 'lcigpric']] 
+        X = X.fillna(X.mean())
+    
+    elif dta_lists[i] == "bwght.dta":
+        # bwght
+        df['smokes'] = (df['cigs'] >= 1).astype(int)
+        Y = df['smokes']
+        X = df[['motheduc', 'white', 'lfaminc']] 
+        X = X.fillna(X.mean())
+    else:
+        # grogger
+        df['arr86'] = (df['narr86']>=1).astype(int)
+        Y = df['arr86']
+        X = df[['pcnv', 'avgsen', 'tottime', 'ptime86', 'inc86', 'black', 'hispan', 'born60']]
+    
+    print(i, X.shape, Y.shape)
+    
+    if OD_Flag:
+        
+        # clf = HBOS(contamination=0.05)
+        # clf = IForest(contamination=0.05)
+        clf = LODA(contamination=0.05)
+        clf.fit(X)
+        
+        # remove outliers
+        X = X.loc[np.where(clf.labels_==0)]
+        Y = Y.loc[np.where(clf.labels_==0)]
+    
+    X = sm.add_constant(X)
 
     # general OLS
     # https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.OLS.html
@@ -77,11 +104,11 @@ for i in range(len(dta_lists)):
 
     # robust regression 
     # https://www.statsmodels.org/stable/generated/statsmodels.robust.robust_linear_model.RLM.html
-    # model=sm.RLM(Y, X.astype(float))
+    model=sm.RLM(Y, X.astype(float))
 
     # probit model 
     # https://www.statsmodels.org/stable/generated/statsmodels.discrete.discrete_model.Probit.html
-    model = Probit(Y, X.astype(float))
+    # model = Probit(Y, X.astype(float))
 
     # logit model 
     # https://www.statsmodels.org/stable/generated/statsmodels.discrete.discrete_model.Logit.html
