@@ -45,8 +45,8 @@ http://fmwww.bc.edu/ec-p/data/wooldridge2k/GROGGER.DES
 """
 
 dta_lists = [
-    "attend.dta",  
-    # "smoke.dta",
+    # "attend.dta",  
+    "smoke.dta",
     # "bwght.dta",
     # "grogger.dta",
 ]
@@ -104,7 +104,7 @@ for i in range(len(dta_lists)):
 
     # robust regression 
     # https://www.statsmodels.org/stable/generated/statsmodels.robust.robust_linear_model.RLM.html
-    model=sm.RLM(Y, X.astype(float))
+    # model=sm.RLM(Y, X.astype(float))
 
     # probit model 
     # https://www.statsmodels.org/stable/generated/statsmodels.discrete.discrete_model.Probit.html
@@ -116,7 +116,7 @@ for i in range(len(dta_lists)):
 
     # poisson model 
     # https://www.statsmodels.org/stable/generated/statsmodels.formula.api.poisson.html
-    # model = Poisson(Y, X.astype(float))
+    model = Poisson(Y, X.astype(float))
 
     final_model = model.fit()
     results_summary = final_model.summary()
